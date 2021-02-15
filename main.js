@@ -11,8 +11,8 @@ function oculta_tudo() {
 function mostra_departamentos() {
     $.ajax({
         url: api_url + '/departamentos',
-        success: function(data) {
-            var arr = fdbs_rows(data).map(function(row) {
+        success: function (data) {
+            var arr = fdbs_rows(data).map(function (row) {
                 return {
                     href: '#depto=' + row['Original']['ID_DEPARTAMENTO'],
                     descricao: row['Original']['DESCRICAO'],
@@ -39,11 +39,25 @@ function roteia_hash() {
     }
 }
 
-$(window).on('hashchange', function(e) {
-    roteia_hash();
-});
+function atualiza_status_loja() {
+    $.ajax({
+        url: api_url + '/status_loja',
+        success: function (data) {
+            if (data > 0) {
+                $("#main-icon").removeClass("fa-store-slash text-warning").addClass("fa-store text-success");
+            }
+            else {
+                $("#main-icon").removeClass("fa-store text-success").addClass("fa-store-slash text-warning");
+            }
+        }
+    });
+}
 
-$(function() {
+$(window).on('hashchange', roteia_hash);
+
+$(function () {
+    window.setInterval(atualiza_status_loja, 60000);
+    atualiza_status_loja();
     roteia_hash();
 });
 
