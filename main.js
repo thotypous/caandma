@@ -64,6 +64,9 @@ function roteia_hash() {
     if (param = hash.match(/#depto=([0-9]+)/)) {
         mostra_departamento(param[1]);
     }
+    else if (param = hash.match(/#busca=(.+)/)) {
+        mostra_pesquisa(param[1]);
+    }
     else {
         mostra_departamentos();
     }
@@ -83,11 +86,18 @@ function atualiza_status_loja() {
     });
 }
 
+
 $(window).on('hashchange', roteia_hash);
 
 $(function () {
+    $("#form-busca").submit(function (e) {
+        location.hash = '#busca=' + encodeURIComponent($('#input-busca').first().val());
+        e.preventDefault();
+    });
+
     window.setInterval(atualiza_status_loja, 60000);
     atualiza_status_loja();
+
     roteia_hash();
 });
 
