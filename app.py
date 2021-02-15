@@ -4,7 +4,10 @@ from flask_cors import CORS
 from flask_caching import Cache
 from requests import Session
 from datasnap import DatasnapSessionAdapter
-from typing import Dict, Any
+from adbs import TableDeserializer
+from io import BytesIO
+from zlib import decompress
+from base64 import b64decode
 import os
 import re
 app = Flask(__name__)
@@ -21,14 +24,28 @@ def server_ip():
 @app.route('/status_loja')
 def status_loja():
     session = get_session()
-    print(session.auth)
     r = session.get('{}/GetStatusLoja/'.format(get_base_url()))
     return jsonify(r.json()['result'][0])
+
+
+@app.route('/departamentos')
+def departamentos():
+    session = get_session()
+    r = session.get(
+        '{}/GetDepartamentos/PedMoveis.2017/'.format(get_base_url()))
+    return jsonify(table_des(r.json()))
 
 
 def get_base_url():
     server_ip = get_server_ip()
     return 'http://{}:5362/datasnap/rest/TsmPedidosMoveis'.format(server_ip)
+
+
+def table_des(json):
+    fvalue = (json['result'][0]['fields']['FDataSets']['fields']
+              ['FMembers'][0]['fields']['FJsonValue']['fields']['FValue'])
+    f = BytesIO(decompress(b64decode(fvalue)))
+    return TableDeserializer(f).load()
 
 
 @cache.cached(timeout=300, key_prefix='server_ip')
