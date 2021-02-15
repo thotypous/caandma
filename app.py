@@ -38,6 +38,11 @@ def departamentos():
     return table_req('/GetDepartamentos/PedMoveis.2017/')
 
 
+@app.route('/produtos_dept/<int:dept>')
+def produtos_dept(dept):
+    return table_req('/GetProdutosDept/PedMoveis.2017/{}/'.format(dept))
+
+
 def get_base_url():
     server_ip = get_server_ip()
     return 'http://{}:5362/datasnap/rest/TsmPedidosMoveis'.format(server_ip)
