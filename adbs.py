@@ -91,7 +91,7 @@ class ADBSDeserializer:
         number = number[:precision]
         number = number[:-decimals] + '.' + number[-decimals:]
         if sign == 1:
-            number = '-' + number 
+            number = '-' + number
         return number
 
 
