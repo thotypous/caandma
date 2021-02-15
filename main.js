@@ -4,6 +4,10 @@ function fdbs_rows(data) {
     return data['FDBS']['Manager']['TableList'][0]['RowList'];
 }
 
+function oculta_tudo() {
+    $("#departamentos-container").addClass('d-none');
+}
+
 function mostra_departamentos() {
     $.ajax({
         url: api_url + '/departamentos',
@@ -14,14 +18,32 @@ function mostra_departamentos() {
                     descricao: row['Original']['DESCRICAO'],
                 };
             });
-            console.log(arr);
             $("#departamentos").loadTemplate($("#templ-departamento"), arr);
             $("#departamentos-container").removeClass('d-none');
         }
     });
 }
 
+function mostra_departamento(depto_id) {
+    console.log(depto_id);
+}
+
+function roteia_hash() {
+    oculta_tudo();
+    var hash = document.location.hash;
+    if (param = hash.match(/#depto=([0-9]+)/)) {
+        mostra_departamento(param[1]);
+    }
+    else {
+        mostra_departamentos();
+    }
+}
+
+$(window).on('hashchange', function(e) {
+    roteia_hash();
+});
+
 $(function() {
-    mostra_departamentos();
+    roteia_hash();
 });
 
