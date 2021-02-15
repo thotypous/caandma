@@ -5,6 +5,7 @@ from flask_caching import Cache
 from requests import Session
 from datasnap import DatasnapSessionAdapter
 from typing import Dict, Any
+import os
 import re
 app = Flask(__name__)
 cache = Cache(config={'CACHE_TYPE': 'simple'})
@@ -12,9 +13,22 @@ cache.init_app(app)
 CORS(app)
 
 
-@app.route('/')
-def index():
-    return jsonify({"test": get_server_ip()})
+@app.route('/server_ip')
+def server_ip():
+    return jsonify(get_server_ip())
+
+
+@app.route('/status_loja')
+def status_loja():
+    session = get_session()
+    print(session.auth)
+    r = session.get('{}/GetStatusLoja/'.format(get_base_url()))
+    return jsonify(r.json()['result'][0])
+
+
+def get_base_url():
+    server_ip = get_server_ip()
+    return 'http://{}:5362/datasnap/rest/TsmPedidosMoveis'.format(server_ip)
 
 
 @cache.cached(timeout=300, key_prefix='server_ip')
@@ -34,6 +48,8 @@ def get_session():
         session.mount('https://', DatasnapSessionAdapter(cache))
         session.hooks['response'].append(
             lambda r, *args, **kwargs: r.raise_for_status())
+        session.auth = (os.getenv('DATASNAP_USER', ''),
+                        os.getenv('DATASNAP_PASS', ''))
         g.session = session
     return session
 
