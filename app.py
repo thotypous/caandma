@@ -26,7 +26,7 @@ def server_ip():
 
 
 @app.route('/status_loja')
-@cache_control(max_age=15, public=True)
+@cache_control(max_age=60, public=True)
 def status_loja():
     session = get_session()
     r = session.get('{}/GetStatusLoja/'.format(get_base_url()))
@@ -34,16 +34,25 @@ def status_loja():
 
 
 @app.route('/departamentos')
-@cache_control(max_age=300, public=True)
-@cache.cached(timeout=300)
+@cache_control(max_age=1800, public=True)
+@cache.cached(timeout=1800)
 def departamentos():
     return table_req('/GetDepartamentos/PedMoveis.2017/')
 
 
 @app.route('/produtos_dept/<int:dept>')
-@cache_control(max_age=15, public=True)
 def produtos_dept(dept):
     return table_req('/GetProdutosDept/PedMoveis.2017/{}/'.format(dept))
+
+
+@app.route('/produtos_consulta/<string:q>')
+def produtos_consulta(q):
+    return table_req('/GetProdutosConsulta/PedMoveis.2017/{}/'.format(q))
+
+
+@app.route('/produtos/<string:q>')
+def produtos(q):
+    return table_req('/GetProdutos/PedMoveis.2017/{}/'.format(q))
 
 
 def get_base_url():

@@ -76,6 +76,10 @@ class ADBSDeserializer:
         val, = struct.unpack('<I', self.f.read(4))
         return val
 
+    def read_uint64(self):
+        val, = struct.unpack('<Q', self.f.read(8))
+        return val
+
     def read_int32(self):
         val, = struct.unpack('<i', self.f.read(4))
         return val
@@ -92,6 +96,12 @@ class ADBSDeserializer:
         number = number[:-decimals] + '.' + number[-decimals:]
         if sign == 1:
             number = '-' + number
+        return number
+
+    def read_currency(self):
+        number = '{:04d}'.format(self.read_uint64())
+        decimals = 4
+        number = number[:-decimals] + '.' + number[-decimals:]
         return number
 
 
@@ -179,6 +189,7 @@ class TableDeserializer(ADBSDeserializer):
                         'dtInt32': self.read_int32,
                         'dtAnsiString': self.read_ansi_str,
                         'dtFmtBCD': self.read_bcd,
+                        'dtCurrency': self.read_currency,
                     }
                     column_id = self.read_uint16()
                     column = column_list[column_id]
