@@ -20,11 +20,13 @@ CORS(app)
 
 
 @app.route('/server_ip')
+@cache_control(max_age=300, public=True)
 def server_ip():
     return jsonify(get_server_ip())
 
 
 @app.route('/status_loja')
+@cache_control(max_age=15, public=True)
 def status_loja():
     session = get_session()
     r = session.get('{}/GetStatusLoja/'.format(get_base_url()))
@@ -39,6 +41,7 @@ def departamentos():
 
 
 @app.route('/produtos_dept/<int:dept>')
+@cache_control(max_age=15, public=True)
 def produtos_dept(dept):
     return table_req('/GetProdutosDept/PedMoveis.2017/{}/'.format(dept))
 
