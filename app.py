@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, make_response, g
 from flask_cors import CORS
 from flask_caching import Cache
 from flask_cachecontrol import FlaskCacheControl, cache as cache_control
@@ -20,13 +20,11 @@ CORS(app)
 
 
 @app.route('/server_ip')
-@cache_control(max_age=300, public=True)
 def server_ip():
     return jsonify(get_server_ip())
 
 
 @app.route('/status_loja')
-@cache_control(max_age=60, public=True)
 def status_loja():
     session = get_session()
     r = session.get('{}/GetStatusLoja/'.format(get_base_url()))
@@ -55,19 +53,38 @@ def produtos(q):
     return table_req('/GetProdutos/PedMoveis.2017/{}/'.format(q))
 
 
+@app.route('/abastecimento_estoque')
+def abastecimento_estoque():
+    return table_req('/GetAbastecimentoEstoque/PedMoveis.2017/')
+
+
+@app.route('/prodt_image/<int:prod_id>.png')
+@cache_control(max_age=1800, public=True)
+def prodt_image(prod_id):
+    tbl = get_table('/GetProdtImage/PedMoveis.2017/{}/'.format(prod_id))
+    img = tbl['FDBS']['Manager']['TableList'][0]['RowList'][0]['Original']['IMAGEM']
+    resp = make_response(img)
+    resp.headers.set('Content-Type', 'image/png')
+    return resp
+
+
 def get_base_url():
     server_ip = get_server_ip()
     return 'http://{}:5362/datasnap/rest/TsmPedidosMoveis'.format(server_ip)
 
 
 def table_req(path):
+    return jsonify(get_table(path))
+
+
+def get_table(path):
     session = get_session()
     r = session.get(
         '{}{}'.format(get_base_url(), path))
-    return jsonify(table_des(r.json()))
+    return deserialize_table(r.json())
 
 
-def table_des(json):
+def deserialize_table(json):
     fvalue = (json['result'][0]['fields']['FDataSets']['fields']
               ['FMembers'][0]['fields']['FJsonValue']['fields']['FValue'])
     f = BytesIO(decompress(b64decode(fvalue)))
