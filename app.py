@@ -2,6 +2,7 @@
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from flask_caching import Cache
+from flask_cachecontrol import FlaskCacheControl, cache as cache_control
 from requests import Session
 from datasnap import DatasnapSessionAdapter
 from adbs import TableDeserializer
@@ -13,6 +14,8 @@ import re
 app = Flask(__name__)
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
+flask_cache_control = FlaskCacheControl()
+flask_cache_control.init_app(app)
 CORS(app)
 
 
@@ -29,16 +32,22 @@ def status_loja():
 
 
 @app.route('/departamentos')
+@cache_control(max_age=300, public=True)
+@cache.cached(timeout=300)
 def departamentos():
-    session = get_session()
-    r = session.get(
-        '{}/GetDepartamentos/PedMoveis.2017/'.format(get_base_url()))
-    return jsonify(table_des(r.json()))
+    return table_req('/GetDepartamentos/PedMoveis.2017/')
 
 
 def get_base_url():
     server_ip = get_server_ip()
     return 'http://{}:5362/datasnap/rest/TsmPedidosMoveis'.format(server_ip)
+
+
+def table_req(path):
+    session = get_session()
+    r = session.get(
+        '{}{}'.format(get_base_url(), path))
+    return jsonify(table_des(r.json()))
 
 
 def table_des(json):
