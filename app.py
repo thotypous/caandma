@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, make_response, g
 from flask_cors import CORS
 from flask_caching import Cache
 from flask_cachecontrol import FlaskCacheControl, cache as cache_control
+from urllib.parse import quote
 from requests import Session
 from datasnap import DatasnapSessionAdapter, deserialize_table
 import os
@@ -41,7 +42,7 @@ def produtos_dept(dept):
 
 @app.route('/produtos_consulta/<string:q>')
 def produtos_consulta(q):
-    return table_req('/GetProdutosConsulta/PedMoveis.2017/{}/'.format(q))
+    return table_req('/GetProdutosConsulta/PedMoveis.2017/{}/'.format(quote(q)))
 
 
 @app.route('/produtos/<string:q>')

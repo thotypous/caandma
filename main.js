@@ -5,7 +5,8 @@ function fdbs_rows(data) {
 }
 
 function oculta_tudo() {
-    $("#departamentos-container").addClass('d-none');
+    $('#departamentos-container').addClass('d-none');
+    $('#produtos-container').addClass('d-none');
 }
 
 function mostra_departamentos() {
@@ -13,9 +14,10 @@ function mostra_departamentos() {
         url: api_url + '/departamentos',
         success: function (data) {
             var arr = fdbs_rows(data).map(function (row) {
+                var r = row['Original'];
                 return {
-                    href: '#depto=' + row['Original']['ID_DEPARTAMENTO'],
-                    descricao: row['Original']['DESCRICAO'],
+                    href: '#depto=' + parseInt(r['ID_DEPARTAMENTO']),
+                    descricao: r['DESCRICAO'],
                 };
             });
             $("#departamentos").loadTemplate($("#templ-departamento"), arr);
@@ -25,12 +27,40 @@ function mostra_departamentos() {
 }
 
 function mostra_departamento(depto_id) {
-    console.log(depto_id);
+    mostra_produtos(api_url + '/produtos_dept/' + parseInt(depto_id));
+}
+
+function mostra_pesquisa(termo) {
+    mostra_produtos(api_url + '/produtos_consulta/' + encodeURIComponent(termo));
+}
+
+function mostra_produtos(url) {
+    $.ajax({
+        url: url,
+        success: function (data) {
+            var arr = fdbs_rows(data).map(function (row) {
+                var r = row['Original'];
+                return {
+                    img: (r['TEM_IMAGEM']
+                        ? api_url + '/prodt_image/' + parseInt(r['ID_PRODUTO']) + '.png'
+                        : 'noimage.svg'),
+                    descricao: r['DESCRICAO'],
+                    estoque: r['ESTOQUE'] ? 'fa fa-check-square' : 'fa fa-exclamation-triangle',
+                    id: r['ID_PRODUTO'],
+                    unidade: r['UNIDADE'],
+                    valor: r['VALOR'],
+                };
+            });
+            $("#produtos").loadTemplate($("#templ-produto"), arr);
+            $("#produtos-container").removeClass('d-none');
+        }
+    });
 }
 
 function roteia_hash() {
     oculta_tudo();
     var hash = document.location.hash;
+    var param;
     if (param = hash.match(/#depto=([0-9]+)/)) {
         mostra_departamento(param[1]);
     }
