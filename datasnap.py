@@ -1,5 +1,9 @@
+from adbs import TableDeserializer
 from requests.adapters import HTTPAdapter
 from urllib3.util import parse_url
+from io import BytesIO
+from zlib import decompress
+from base64 import b64decode
 import re
 
 
@@ -27,3 +31,10 @@ class DatasnapSessionAdapter(HTTPAdapter):
         if m:
             self.cache.set(self._get_cache_key(req), m.group(1))
         return response
+
+
+def deserialize_table(json):
+    fvalue = (json['result'][0]['fields']['FDataSets']['fields']
+              ['FMembers'][0]['fields']['FJsonValue']['fields']['FValue'])
+    f = BytesIO(decompress(b64decode(fvalue)))
+    return TableDeserializer(f).load()

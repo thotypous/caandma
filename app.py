@@ -4,11 +4,7 @@ from flask_cors import CORS
 from flask_caching import Cache
 from flask_cachecontrol import FlaskCacheControl, cache as cache_control
 from requests import Session
-from datasnap import DatasnapSessionAdapter
-from adbs import TableDeserializer
-from io import BytesIO
-from zlib import decompress
-from base64 import b64decode
+from datasnap import DatasnapSessionAdapter, deserialize_table
 import os
 import re
 app = Flask(__name__)
@@ -82,13 +78,6 @@ def get_table(path):
     r = session.get(
         '{}{}'.format(get_base_url(), path))
     return deserialize_table(r.json())
-
-
-def deserialize_table(json):
-    fvalue = (json['result'][0]['fields']['FDataSets']['fields']
-              ['FMembers'][0]['fields']['FJsonValue']['fields']['FValue'])
-    f = BytesIO(decompress(b64decode(fvalue)))
-    return TableDeserializer(f).load()
 
 
 @cache.cached(timeout=300, key_prefix='server_ip')
