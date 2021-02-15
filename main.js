@@ -31,7 +31,7 @@ function mostra_departamento(depto_id) {
 }
 
 function mostra_pesquisa(termo) {
-    mostra_produtos(api_url + '/produtos_consulta/' + encodeURIComponent(termo));
+    mostra_produtos(api_url + '/produtos_consulta/' + termo);
 }
 
 function mostra_produtos(url) {
