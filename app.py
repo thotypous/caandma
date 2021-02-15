@@ -17,6 +17,7 @@ def index():
     return jsonify({"test": get_server_ip()})
 
 
+@cache.cached(timeout=300, key_prefix='server_ip')
 def get_server_ip():
     session = get_session()
     r = session.get(
