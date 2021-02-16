@@ -37,11 +37,14 @@ def departamentos():
 
 
 @app.route('/produtos_dept/<int:dept>')
+@cache_control(max_age=60, public=True)
+@cache.cached(timeout=60)
 def produtos_dept(dept):
     return table_req('/GetProdutosDept/PedMoveis.2017/{}/'.format(dept))
 
 
 @app.route('/produtos_consulta/<string:q>')
+@cache_control(max_age=60, public=True)
 def produtos_consulta(q):
     return table_req('/GetProdutosConsulta/PedMoveis.2017/{}/'.format(quote(q)))
 
@@ -57,7 +60,7 @@ def abastecimento_estoque():
 
 
 @app.route('/prodt_image/<int:prod_id>.png')
-@cache_control(max_age=1800, public=True)
+@cache_control(max_age=604800, public=True)
 def prodt_image(prod_id):
     tbl = get_table('/GetProdtImage/PedMoveis.2017/{}/'.format(prod_id))
     img = tbl['FDBS']['Manager']['TableList'][0]['RowList'][0]['Original']['IMAGEM']
