@@ -23,6 +23,7 @@ def server_ip():
 
 @app.route('/status_loja')
 @cache_control(max_age=30, public=True)
+@cache.cached(timeout=30)
 def status_loja():
     session = get_session()
     r = session.get('{}/GetStatusLoja/'.format(get_base_url()))
