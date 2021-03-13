@@ -82,9 +82,11 @@ function atualiza_status_loja() {
         success: function (data) {
             if (data > 0) {
                 $("#main-icon").removeClass("fa-store-slash text-warning").addClass("fa-store text-success");
+                $("#main-icon").attr("title", "Loja aberta");
             }
             else {
                 $("#main-icon").removeClass("fa-store text-success").addClass("fa-store-slash text-warning");
+                $("#main-icon").attr("title", "Loja fechada");
             }
         }
     });
