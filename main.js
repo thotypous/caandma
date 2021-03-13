@@ -4,9 +4,10 @@ function fdbs_rows(data) {
     return data['FDBS']['Manager']['TableList'][0]['RowList'];
 }
 
-function oculta_tudo() {
+function oculta_tudo(carregando) {
     $('#departamentos-container').addClass('d-none');
     $('#produtos-container').addClass('d-none');
+    $('#carregando').addClass('d-none');
 }
 
 function mostra_departamentos() {
@@ -21,6 +22,7 @@ function mostra_departamentos() {
                 };
             });
             $("#departamentos").loadTemplate($("#templ-departamento"), arr);
+            oculta_tudo();
             $("#departamentos-container").removeClass('d-none');
         }
     });
@@ -52,6 +54,7 @@ function mostra_produtos(url) {
                 };
             });
             $("#produtos").loadTemplate($("#templ-produto"), arr);
+            oculta_tudo();
             $("#produtos-container").removeClass('d-none');
         }
     });
@@ -59,6 +62,7 @@ function mostra_produtos(url) {
 
 function roteia_hash() {
     oculta_tudo();
+    $('#carregando').removeClass('d-none');
     var hash = document.location.hash;
     var param;
     if (param = hash.match(/#depto=([0-9]+)/)) {
