@@ -110,7 +110,7 @@ $(function () {
         e.preventDefault();
     });
 
-    window.setInterval(atualiza_status_loja, 60000);
+    window.setInterval(atualiza_status_loja, 5*60*1000);
     atualiza_status_loja();
 
     roteia_hash();
