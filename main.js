@@ -1,4 +1,5 @@
 var api_url = "https://caandma-api.pmatias.me";
+var pending_req = null;
 
 function fdbs_rows(data) {
     return data['FDBS']['Manager']['TableList'][0]['RowList'];
@@ -11,9 +12,13 @@ function oculta_tudo(carregando) {
 }
 
 function mostra_departamentos() {
-    $.ajax({
+    if (pending_req) {
+        pending_req.abort();
+    }
+    pending_req = $.ajax({
         url: api_url + '/departamentos',
         success: function (data) {
+            pending_req = null;
             var arr = fdbs_rows(data).map(function (row) {
                 var r = row['Original'];
                 return {
@@ -37,9 +42,13 @@ function mostra_pesquisa(termo) {
 }
 
 function mostra_produtos(url) {
-    $.ajax({
+    if (pending_req) {
+        pending_req.abort();
+    }
+    pending_req = $.ajax({
         url: url,
         success: function (data) {
+            pending_req = null;
             var arr = fdbs_rows(data).map(function (row) {
                 var r = row['Original'];
                 return {
