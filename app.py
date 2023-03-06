@@ -1,113 +1,104 @@
 #!/usr/bin/env python
-from flask import Flask, request, jsonify, make_response, g
-from flask_cors import CORS
-from flask_caching import Cache
-from flask_cachecontrol import FlaskCacheControl, cache as cache_control
+from fastapi import FastAPI, Response
+from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
+from fastapi_cache.decorator import cache
 from urllib.parse import quote
-from requests import Session
-from datasnap import DatasnapSessionAdapter, deserialize_table
+from io import BytesIO
+from datasnap import DatasnapTransport, deserialize_table
+import httpx
 import os
 import re
-app = Flask(__name__)
-cache = Cache(config={'CACHE_TYPE': 'simple'})
-cache.init_app(app)
-flask_cache_control = FlaskCacheControl()
-flask_cache_control.init_app(app)
-CORS(app)
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get('/server_ip')
+async def server_ip():
+    return await get_server_ip()
 
 
-@app.route('/server_ip')
-def server_ip():
-    return jsonify(get_server_ip())
+@app.get('/status_loja')
+@cache(expire=30)
+async def status_loja(response: Response):
+    response.headers['cache-control'] = 'public, max-age=30'
+    r = await app.state.client.get(f'{await get_base_url()}/GetStatusLoja/')
+    return r.json()['result'][0]
 
 
-@app.route('/status_loja')
-@cache_control(max_age=30, public=True)
-@cache.cached(timeout=30)
-def status_loja():
-    session = get_session()
-    r = session.get('{}/GetStatusLoja/'.format(get_base_url()))
-    return jsonify(r.json()['result'][0])
+@app.get('/departamentos')
+@cache(expire=1800)
+async def departamentos(response: Response):
+    response.headers['cache-control'] = 'public, max-age=1800'
+    return await get_table('/GetDepartamentos/PedMoveis.2017/')
 
 
-@app.route('/departamentos')
-@cache_control(max_age=1800, public=True)
-@cache.cached(timeout=1800)
-def departamentos():
-    return table_req('/GetDepartamentos/PedMoveis.2017/')
+@app.get('/produtos_dept/{dept}')
+@cache(expire=60)
+async def produtos_dept(dept: int, response: Response):
+    response.headers['cache-control'] = 'public, max-age=60'
+    return await get_table(f'/GetProdutosDept/PedMoveis.2017/{dept}/')
 
 
-@app.route('/produtos_dept/<int:dept>')
-@cache_control(max_age=60, public=True)
-@cache.cached(timeout=60)
-def produtos_dept(dept):
-    return table_req('/GetProdutosDept/PedMoveis.2017/{}/'.format(dept))
+@app.get('/produtos_consulta/{q}')
+async def produtos_consulta(q: str, response: Response):
+    response.headers['cache-control'] = 'public, max-age=60'
+    return await get_table(f'/GetProdutosConsulta/PedMoveis.2017/{quote(q)}/')
 
 
-@app.route('/produtos_consulta/<string:q>')
-@cache_control(max_age=60, public=True)
-def produtos_consulta(q):
-    return table_req('/GetProdutosConsulta/PedMoveis.2017/{}/'.format(quote(q)))
+@app.get('/produtos/{q}')
+async def produtos(q: str):
+    return await get_table(f'/GetProdutos/PedMoveis.2017/{q}/')
 
 
-@app.route('/produtos/<string:q>')
-def produtos(q):
-    return table_req('/GetProdutos/PedMoveis.2017/{}/'.format(q))
+@app.get('/abastecimento_estoque')
+async def abastecimento_estoque():
+    return await get_table('/GetAbastecimentoEstoque/PedMoveis.2017/')
 
 
-@app.route('/abastecimento_estoque')
-def abastecimento_estoque():
-    return table_req('/GetAbastecimentoEstoque/PedMoveis.2017/')
+@app.get('/prodt_image/{prod_id}.png')
+async def prodt_image(prod_id: int, response: Response):
+    response.headers['cache-control'] = 'public, max-age=604800'
+    tbl = await get_table(f'/GetProdtImage/PedMoveis.2017/{prod_id}/')
+    img = BytesIO(tbl['FDBS']['Manager']['TableList'][0]['RowList'][0]['Original']['IMAGEM'])
+    return StreamingResponse(img, media_type='image/png',
+                             headers={'Content-Disposition': f'inline; filename="{prod_id}.png"'})
 
 
-@app.route('/prodt_image/<int:prod_id>.png')
-@cache_control(max_age=604800, public=True)
-def prodt_image(prod_id):
-    tbl = get_table('/GetProdtImage/PedMoveis.2017/{}/'.format(prod_id))
-    img = tbl['FDBS']['Manager']['TableList'][0]['RowList'][0]['Original']['IMAGEM']
-    resp = make_response(img)
-    resp.headers.set('Content-Type', 'image/png')
-    return resp
+async def get_base_url():
+    server_ip = await get_server_ip()
+    return f'http://{server_ip}:5362/datasnap/rest/TsmPedidosMoveis'
 
 
-def get_base_url():
-    server_ip = get_server_ip()
-    return 'http://{}:5362/datasnap/rest/TsmPedidosMoveis'.format(server_ip)
-
-
-def table_req(path):
-    return jsonify(get_table(path))
-
-
-def get_table(path):
-    session = get_session()
-    r = session.get(
-        '{}{}'.format(get_base_url(), path))
+async def get_table(path):
+    r = await app.state.client.get(f'{await get_base_url()}{path}')
     return deserialize_table(r.json())
 
 
-@cache.cached(timeout=300, key_prefix='server_ip')
-def get_server_ip():
-    session = get_session()
-    r = session.get(
+@cache(expire=300, namespace='server_ip')
+async def get_server_ip():
+    r = await app.state.client.get(
         'http://servidor.shsistemas.net:7077/datasnap/rest/TSM/GetIPAcessoRemoto/CAAND')
     m = re.match(r'ok(.*)', r.json()['result'][0])
     return m.group(1)
 
 
-def get_session():
-    session = getattr(g, 'session', None)
-    if session is None:
-        session = Session()
-        session.mount('http://', DatasnapSessionAdapter(cache))
-        session.mount('https://', DatasnapSessionAdapter(cache))
-        session.hooks['response'].append(
-            lambda r, *args, **kwargs: r.raise_for_status())
-        session.auth = (os.getenv('DATASNAP_USER', ''),
-                        os.getenv('DATASNAP_PASS', ''))
-        g.session = session
-    return session
+@app.on_event("startup")
+async def startup():
+    FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
 
+    async def raise_on_4xx_5xx(r):
+        r.raise_for_status()
 
-if __name__ == '__main__':
-    app.run(threaded=True, port=5000)
+    app.state.client = httpx.AsyncClient(
+            mounts={"all://": DatasnapTransport()},
+            event_hooks={'response': [raise_on_4xx_5xx]},
+            auth=(os.getenv('DATASNAP_USER', ''),
+                  os.getenv('DATASNAP_PASS', '')))

@@ -1,35 +1,32 @@
 from adbs import TableDeserializer
-from requests.adapters import HTTPAdapter
-from urllib3.util import parse_url
+import httpx
 from io import BytesIO
 from zlib import decompress
 from base64 import b64decode
 import re
 
 
-class DatasnapSessionAdapter(HTTPAdapter):
-    def __init__(self, cache, **kwargs):
-        self.cache = cache
+class DatasnapTransport(httpx.AsyncHTTPTransport):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._dssession = {}
 
-    @staticmethod
-    def _get_cache_key(request):
-        scheme, auth, host, port, path, query, fragment = parse_url(
-            request.url)
-        return 'dssession:{}:{}'.format(host, port)
-
-    def add_headers(self, request, **kwargs):
-        super().add_headers(request, **kwargs)
-        dssession = self.cache.get(self._get_cache_key(request))
+    async def handle_async_request(
+        self,
+        request: httpx.Request,
+    ) -> httpx.Response:
+        key = f'{request.url.host}:{request.url.port}'
+        dssession = self._dssession.get(key)
         if dssession:
             request.headers['Pragma'] = 'dssession=' + dssession
 
-    def build_response(self, req, resp):
-        response = super().build_response(req, resp)
+        response = await super().handle_async_request(request)
+
         m = re.search(r'dssession=([^,\s]+)',
                       response.headers.get('Pragma', ''))
         if m:
-            self.cache.set(self._get_cache_key(req), m.group(1))
+            self._dssession[key] = m.group(1)
+
         return response
 
 

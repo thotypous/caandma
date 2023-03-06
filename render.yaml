@@ -9,7 +9,3 @@ services:
     plan: free # optional; defaults to starter
     domains: # custom domains
       - 'caandma-api.pmatias.me'
-    envVars:
-      - key: WEB_CONCURRENCY # Imported from Heroku app
-        value: 24
-
