@@ -27,29 +27,26 @@ async def server_ip():
 
 @app.get('/status_loja')
 @cache(expire=30)
-async def status_loja(response: Response):
-    response.headers['cache-control'] = 'public, max-age=30'
+async def status_loja():
     r = await app.state.client.get(f'{await get_base_url()}/GetStatusLoja/')
     return r.json()['result'][0]
 
 
 @app.get('/departamentos')
 @cache(expire=1800)
-async def departamentos(response: Response):
-    response.headers['cache-control'] = 'public, max-age=1800'
+async def departamentos():
     return await get_table('/GetDepartamentos/PedMoveis.2017/')
 
 
 @app.get('/produtos_dept/{dept}')
 @cache(expire=60)
-async def produtos_dept(dept: int, response: Response):
-    response.headers['cache-control'] = 'public, max-age=60'
+async def produtos_dept(dept: int):
     return await get_table(f'/GetProdutosDept/PedMoveis.2017/{dept}/')
 
 
 @app.get('/produtos_consulta/{q}')
 async def produtos_consulta(q: str, response: Response):
-    response.headers['cache-control'] = 'public, max-age=60'
+    response.headers['Cache-Control'] = 'public, max-age=60'
     return await get_table(f'/GetProdutosConsulta/PedMoveis.2017/{quote(q)}/')
 
 
@@ -65,7 +62,7 @@ async def abastecimento_estoque():
 
 @app.get('/prodt_image/{prod_id}.png')
 async def prodt_image(prod_id: int, response: Response):
-    response.headers['cache-control'] = 'public, max-age=604800'
+    response.headers['Cache-Control'] = 'public, max-age=604800'
     tbl = await get_table(f'/GetProdtImage/PedMoveis.2017/{prod_id}/')
     img = BytesIO(tbl['FDBS']['Manager']['TableList'][0]['RowList'][0]['Original']['IMAGEM'])
     return StreamingResponse(img, media_type='image/png',
