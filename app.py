@@ -3,6 +3,7 @@ from fastapi import FastAPI, Response
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_cache import FastAPICache
+from fastapi_cache.coder import PickleCoder
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
@@ -63,12 +64,16 @@ async def abastecimento_estoque():
 
 
 @app.get('/prodt_image/{prod_id}.png')
-@cache(expire=604800)
 async def prodt_image(prod_id: int):
-    tbl = await get_table(f'/GetProdtImage/PedMoveis.2017/{prod_id}/')
-    img = BytesIO(tbl['FDBS']['Manager']['TableList'][0]['RowList'][0]['Original']['IMAGEM'])
-    return StreamingResponse(img, media_type='image/png',
+    return StreamingResponse(BytesIO(await get_prodt_image(prod_id)),
+                             media_type='image/png',
                              headers={'Content-Disposition': f'inline; filename="{prod_id}.png"'})
+
+
+@cache(expire=604800, namespace='prodt_image', coder=PickleCoder)
+async def get_prodt_image(prod_id: int):
+    tbl = await get_table(f'/GetProdtImage/PedMoveis.2017/{prod_id}/')
+    return tbl['FDBS']['Manager']['TableList'][0]['RowList'][0]['Original']['IMAGEM']
 
 
 async def get_base_url():
