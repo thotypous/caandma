@@ -56,7 +56,7 @@ function mostra_produtos(url) {
                         ? api_url + '/prodt_image/' + parseInt(r['ID_PRODUTO']) + '.png'
                         : 'noimage.svg'),
                     descricao: r['DESCRICAO'],
-                    estoque: r['ESTOQUE'] ? 'fa fa-check-square' : 'fa fa-exclamation-triangle',
+                    estoque: r['ESTOQUE'] ? 'fa fa-check-square' : 'fa fa-exclamation-triangle text-warning',
                     id: r['ID_PRODUTO'],
                     unidade: r['UNIDADE'],
                     valor: r['VALOR'],
@@ -72,6 +72,7 @@ function mostra_produtos(url) {
 function roteia_hash() {
     oculta_tudo();
     $('#carregando').removeClass('d-none');
+    $(window).scrollTop(0);
     var hash = document.location.hash;
     var param;
     if (param = hash.match(/#depto=([0-9]+)/)) {
