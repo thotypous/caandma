@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_cache import FastAPICache
@@ -67,7 +67,8 @@ async def abastecimento_estoque():
 async def prodt_image(prod_id: int):
     return StreamingResponse(BytesIO(await get_prodt_image(prod_id)),
                              media_type='image/png',
-                             headers={'Content-Disposition': f'inline; filename="{prod_id}.png"'})
+                             headers={'Content-Disposition': f'inline; filename="{prod_id}.png"',
+                                      'Cache-Control': 'public, immutable, max-age=604800'})
 
 
 @cache(expire=604800, namespace='prodt_image', coder=PickleCoder)
