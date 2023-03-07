@@ -4,7 +4,9 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
+from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
+from redis import asyncio as aioredis
 from urllib.parse import quote
 from io import BytesIO
 from datasnap import DatasnapTransport, deserialize_table
@@ -45,8 +47,8 @@ async def produtos_dept(dept: int):
 
 
 @app.get('/produtos_consulta/{q}')
-async def produtos_consulta(q: str, response: Response):
-    response.headers['Cache-Control'] = 'public, max-age=60'
+@cache(expire=60)
+async def produtos_consulta(q: str):
     return await get_table(f'/GetProdutosConsulta/PedMoveis.2017/{quote(q)}/')
 
 
@@ -61,8 +63,8 @@ async def abastecimento_estoque():
 
 
 @app.get('/prodt_image/{prod_id}.png')
-async def prodt_image(prod_id: int, response: Response):
-    response.headers['Cache-Control'] = 'public, max-age=604800'
+@cache(expire=604800)
+async def prodt_image(prod_id: int):
     tbl = await get_table(f'/GetProdtImage/PedMoveis.2017/{prod_id}/')
     img = BytesIO(tbl['FDBS']['Manager']['TableList'][0]['RowList'][0]['Original']['IMAGEM'])
     return StreamingResponse(img, media_type='image/png',
@@ -70,8 +72,7 @@ async def prodt_image(prod_id: int, response: Response):
 
 
 async def get_base_url():
-    server_ip = await get_server_ip()
-    return f'http://{server_ip}:5362/datasnap/rest/TsmPedidosMoveis'
+    return f'http://{await get_server_ip()}:5362/datasnap/rest/TsmPedidosMoveis'
 
 
 async def get_table(path):
@@ -89,7 +90,13 @@ async def get_server_ip():
 
 @app.on_event("startup")
 async def startup():
-    FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
+    redis_url = os.getenv('REDIS_URL')
+    if redis_url:
+        redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
+        cache_backend = RedisBackend(redis)
+    else:
+        cache_backend = InMemoryBackend()
+    FastAPICache.init(cache_backend, prefix="fastapi-cache")
 
     async def raise_on_4xx_5xx(r):
         r.raise_for_status()
