@@ -107,7 +107,7 @@ async def startup():
         r.raise_for_status()
 
     app.state.client = httpx.AsyncClient(
-            mounts={"all://": DatasnapTransport()},
+            #mounts={"all://": DatasnapTransport()},
             event_hooks={'response': [raise_on_4xx_5xx]},
             auth=(os.getenv('DATASNAP_USER', ''),
                   os.getenv('DATASNAP_PASS', '')))
