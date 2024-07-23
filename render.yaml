@@ -8,4 +8,4 @@ services:
     dockerfilePath: Dockerfile.render
     plan: free # optional; defaults to starter
     domains: # custom domains
-      - 'caandma-api.pmatias.me'
+      - 'caandma-api.matias.co.in'

@@ -1,4 +1,4 @@
-var api_url = "https://caandma-api.pmatias.me";
+var api_url = "https://caandma-api.matias.co.in";
 var pending_req = null;
 
 function fdbs_rows(data) {
