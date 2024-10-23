@@ -89,7 +89,7 @@ async def get_table(path):
 @cache(expire=300, namespace='server_ip')
 async def get_server_ip():
     r = await app.state.client.get(
-        'http://servidor.shsistemas.net:7077/datasnap/rest/TSM/GetIPAcessoRemoto/CAAND')
+        'http://londres.shsistemas.com.br/ipacessoremoto/datasnap/rest/TSM/GetIPAcessoRemoto/CAAND')
     m = re.match(r'ok(.*)', r.json()['result'][0])
     return m.group(1)
 
